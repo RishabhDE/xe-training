@@ -1,0 +1,570 @@
+{
+  "datasets": [
+    {
+      "name": "1edcfffd",
+      "displayName": "flights_genie",
+      "catalog": "xe_training_catalog",
+      "config": {
+        "version": "1.1",
+        "source": "xe_training_catalog.databricks.flights_genie",
+        "dimensions": [
+          {
+            "name": "flight_id",
+            "expr": "source.flight_id",
+            "displayName": "Flight Id"
+          },
+          {
+            "name": "airline",
+            "expr": "source.airline",
+            "comment": "IATA 2-letter airline code (EY=Etihad, EK=Emirates, QR=Qatar Airways, TK=Turkish Airlines, BA=British Airways)",
+            "displayName": "Airline"
+          },
+          {
+            "name": "airline_name",
+            "expr": "source.airline_name",
+            "displayName": "Airline Name"
+          },
+          {
+            "name": "origin",
+            "expr": "source.origin",
+            "comment": "IATA 3-letter airport code for departure",
+            "displayName": "Origin"
+          },
+          {
+            "name": "destination",
+            "expr": "source.destination",
+            "comment": "IATA 3-letter airport code for arrival",
+            "displayName": "Destination"
+          },
+          {
+            "name": "flight_date",
+            "expr": "source.flight_date",
+            "displayName": "Flight Date"
+          },
+          {
+            "name": "departure_time",
+            "expr": "source.departure_time",
+            "displayName": "Departure Time"
+          },
+          {
+            "name": "delay_minutes",
+            "expr": "source.delay_minutes",
+            "comment": "Minutes of delay. Negative means early departure. 0 means on time.",
+            "displayName": "Delay Minutes"
+          },
+          {
+            "name": "passengers",
+            "expr": "source.passengers",
+            "displayName": "Passengers"
+          },
+          {
+            "name": "revenue_usd",
+            "expr": "source.revenue_usd",
+            "comment": "Total flight revenue in US dollars",
+            "displayName": "Revenue Usd"
+          },
+          {
+            "name": "aircraft_type",
+            "expr": "source.aircraft_type",
+            "displayName": "Aircraft Type"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "4e1843d6",
+      "displayName": "metric_revenue_by_airline",
+      "catalog": "xe_training_catalog",
+      "config": {
+        "version": "1.1",
+        "source": "xe_training_catalog.databricks.metric_revenue_by_airline",
+        "dimensions": [
+          {
+            "name": "airline",
+            "expr": "source.airline",
+            "displayName": "Airline"
+          },
+          {
+            "name": "revenue_per_flight",
+            "expr": "source.revenue_per_flight",
+            "displayName": "Revenue Per Flight"
+          },
+          {
+            "name": "flights",
+            "expr": "source.flights",
+            "displayName": "Flights"
+          },
+          {
+            "name": "total_revenue",
+            "expr": "source.total_revenue",
+            "displayName": "Total Revenue"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "e36e2232",
+      "displayName": "metric_revenue_by_route",
+      "catalog": "xe_training_catalog",
+      "config": {
+        "version": "1.1",
+        "source": "xe_training_catalog.databricks.metric_revenue_by_route",
+        "dimensions": [
+          {
+            "name": "origin",
+            "expr": "source.origin",
+            "displayName": "Origin"
+          },
+          {
+            "name": "destination",
+            "expr": "source.destination",
+            "displayName": "Destination"
+          },
+          {
+            "name": "revenue_per_flight",
+            "expr": "source.revenue_per_flight",
+            "displayName": "Revenue Per Flight"
+          },
+          {
+            "name": "total_passengers",
+            "expr": "source.total_passengers",
+            "displayName": "Total Passengers"
+          },
+          {
+            "name": "flights",
+            "expr": "source.flights",
+            "displayName": "Flights"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "delay_by_airline",
+      "displayName": "Delay Categories by Airline",
+      "queryLines": [
+        "SELECT\n",
+        "  airline_name,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN delay_minutes <= 0 THEN 1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS on_time,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN delay_minutes BETWEEN 1 AND 30 THEN 1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS minor_delay,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN delay_minutes BETWEEN 31 AND 60 THEN 1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS moderate_delay,\n",
+        "  SUM(\n",
+        "    CASE\n",
+        "      WHEN delay_minutes > 60 THEN 1\n",
+        "      ELSE 0\n",
+        "    END\n",
+        "  ) AS severe_delay\n",
+        "FROM\n",
+        "  xe_training_catalog.databricks.flights_genie\n",
+        "GROUP BY\n",
+        "  airline_name\n",
+        "ORDER BY\n",
+        "  airline_name"
+      ]
+    },
+    {
+      "name": "revenue_over_time",
+      "displayName": "Revenue Over Time",
+      "queryLines": [
+        "SELECT\n",
+        "  flight_date,\n",
+        "  SUM(revenue_usd) AS daily_revenue,\n",
+        "  SUM(SUM(revenue_usd)) OVER (ORDER BY flight_date ROWS UNBOUNDED PRECEDING) AS cumulative_revenue,\n",
+        "  COUNT(*) AS flights\n",
+        "FROM\n",
+        "  xe_training_catalog.databricks.flights_genie\n",
+        "GROUP BY\n",
+        "  flight_date\n",
+        "ORDER BY\n",
+        "  flight_date"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "93e36c7a",
+      "displayName": "Untitled page",
+      "layout": [
+        {
+          "widget": {
+            "name": "revenue_by_airline_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1edcfffd",
+                  "fields": [
+                    {
+                      "name": "airline_name",
+                      "expression": "`airline_name`"
+                    },
+                    {
+                      "name": "sum(revenue_usd)",
+                      "expression": "SUM(`revenue_usd`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Total Revenue by Airline",
+                "showTitle": true
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "airline_name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(revenue_usd)",
+                  "displayName": "Revenue USD",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "delay_categories_stacked",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "delay_by_airline",
+                  "fields": [
+                    {
+                      "name": "airline_name",
+                      "expression": "`airline_name`"
+                    },
+                    {
+                      "name": "sum(on_time)",
+                      "expression": "SUM(`on_time`)"
+                    },
+                    {
+                      "name": "sum(minor_delay)",
+                      "expression": "SUM(`minor_delay`)"
+                    },
+                    {
+                      "name": "sum(moderate_delay)",
+                      "expression": "SUM(`moderate_delay`)"
+                    },
+                    {
+                      "name": "sum(severe_delay)",
+                      "expression": "SUM(`severe_delay`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Flight Delay Categories by Airline",
+                "showTitle": true
+              },
+              "mark": {
+                "layout": "stack"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "airline_name",
+                  "displayName": "Airline Name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fields": [
+                    {
+                      "fieldName": "sum(on_time)",
+                      "displayName": "On Time"
+                    },
+                    {
+                      "fieldName": "sum(minor_delay)",
+                      "displayName": "Minor Delay (1-30 min)"
+                    },
+                    {
+                      "fieldName": "sum(moderate_delay)",
+                      "displayName": "Moderate Delay (31-60 min)"
+                    },
+                    {
+                      "fieldName": "sum(severe_delay)",
+                      "displayName": "Severe Delay (>60 min)"
+                    }
+                  ],
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "revenue_over_time_line",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "revenue_over_time",
+                  "fields": [
+                    {
+                      "name": "flight_date",
+                      "expression": "`flight_date`"
+                    },
+                    {
+                      "name": "sum(daily_revenue)",
+                      "expression": "SUM(`daily_revenue`)"
+                    },
+                    {
+                      "name": "sum(cumulative_revenue)",
+                      "expression": "SUM(`cumulative_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Daily & Cumulative Revenue Over Time",
+                "showTitle": true
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "flight_date",
+                  "displayName": "Flight Date",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fields": [
+                    {
+                      "fieldName": "sum(daily_revenue)",
+                      "displayName": "Daily Revenue"
+                    },
+                    {
+                      "fieldName": "sum(cumulative_revenue)",
+                      "displayName": "Cumulative Revenue"
+                    }
+                  ],
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "route_revenue_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "e36e2232",
+                  "fields": [
+                    {
+                      "name": "origin",
+                      "expression": "`origin`"
+                    },
+                    {
+                      "name": "revenue_per_flight",
+                      "expression": "`revenue_per_flight`"
+                    },
+                    {
+                      "name": "total_passengers",
+                      "expression": "`total_passengers`"
+                    },
+                    {
+                      "name": "flights",
+                      "expression": "`flights`"
+                    },
+                    {
+                      "name": "destination",
+                      "expression": "`destination`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Revenue by Route",
+                "showTitle": true
+              },
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "origin",
+                    "displayName": "Route",
+                    "formatTemplate": "{{ @ }} -> {{ destination }}"
+                  },
+                  {
+                    "fieldName": "revenue_per_flight",
+                    "contentAlignment": "right",
+                    "format": {
+                      "type": "number-currency",
+                      "currencyCode": "USD",
+                      "abbreviation": "none"
+                    },
+                    "displayName": "Revenue / Flight",
+                    "style": {
+                      "type": "basic",
+                      "backgroundColor": "#ffc7ce",
+                      "foregroundColor": "#9c0006",
+                      "rules": [
+                        {
+                          "condition": {
+                            "operand": {
+                              "type": "data-value",
+                              "value": "240000"
+                            },
+                            "operator": ">="
+                          },
+                          "backgroundColor": "#c6efce",
+                          "foregroundColor": "#276221",
+                          "bold": true
+                        },
+                        {
+                          "condition": {
+                            "operand": {
+                              "type": "data-value",
+                              "value": "180000"
+                            },
+                            "operator": ">="
+                          },
+                          "backgroundColor": "#ffeb9c",
+                          "foregroundColor": "#9c6500"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "fieldName": "total_passengers",
+                    "contentAlignment": "right",
+                    "displayName": "Passengers"
+                  },
+                  {
+                    "fieldName": "flights",
+                    "contentAlignment": "right",
+                    "displayName": "Flights"
+                  }
+                ],
+                "rowOrder": [
+                  {
+                    "by": "column-reversed",
+                    "field": {
+                      "index": 1
+                    }
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
