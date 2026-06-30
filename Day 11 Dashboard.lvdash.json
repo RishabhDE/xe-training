@@ -261,7 +261,7 @@
                 },
                 "y": {
                   "fieldName": "sum(revenue_usd)",
-                  "displayName": "Revenue USD",
+                  "displayName": "Revenue (USD)",
                   "scale": {
                     "type": "quantitative"
                   }
